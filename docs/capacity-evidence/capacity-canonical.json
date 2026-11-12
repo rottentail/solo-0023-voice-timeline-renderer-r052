@@ -1,0 +1,3325 @@
+{
+  "tool": "capacitycheck (cmd/capacitycheck)",
+  "started_at": "2026-11-12T05:11:51Z",
+  "host": {
+    "cpus": 10,
+    "go_version": "go1.23.12",
+    "goarch": "arm64",
+    "goos": "linux",
+    "mem_total_mb": 7934
+  },
+  "server_binary": "cmd/voiceservice built with production defaults (no source changes)",
+  "server_sha256": "3adc7f732e019f94c6dd21f037b826d52b733ee61a09eb63da9c3838a872b561",
+  "git_head": "37a6493405636bc39a17b2092ae9fe07dd12d433",
+  "budget_mib": 512,
+  "commit_ceiling_mib": 384,
+  "scenarios": [
+    {
+      "id": "limits-enforcement",
+      "purpose": "Confirm each configured limit individually rejects overflow with a stable error code.",
+      "limits_engaged": {
+        "output_frames_over": 8640001,
+        "request_bytes_over": "37 MiB payload (~49.4 MiB body)",
+        "server_read_timeout_s": 60,
+        "source_bytes_exact": 33554432,
+        "source_bytes_over": "32 MiB + 1 frame",
+        "spans_over": 65
+      },
+      "expectation": "commit (all five limit rejections observed with stable codes)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_limit_exact",
+          "method": "PUT",
+          "path": "/v1/sources/src_limit_exact",
+          "status": 201,
+          "latency_ms": 340.935583,
+          "bytes_up": 44739301,
+          "bytes_down": 369
+        },
+        {
+          "name": "put_source:src_limit_over",
+          "method": "PUT",
+          "path": "/v1/sources/src_limit_over",
+          "status": 413,
+          "latency_ms": 215.339292,
+          "bytes_up": 44739304,
+          "bytes_down": 119,
+          "error_code": "source_too_large"
+        },
+        {
+          "name": "put_source:src_request_over",
+          "method": "PUT",
+          "path": "/v1/sources/src_request_over",
+          "status": 413,
+          "latency_ms": 148.458751,
+          "bytes_up": 51729810,
+          "bytes_down": 90,
+          "error_code": "request_too_large"
+        },
+        {
+          "name": "put_source:src_tiny",
+          "method": "PUT",
+          "path": "/v1/sources/src_tiny",
+          "status": 201,
+          "latency_ms": 4.843,
+          "bytes_up": 128110,
+          "bytes_down": 347
+        },
+        {
+          "name": "put_timeline:tl_spans_over",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_spans_over",
+          "status": 422,
+          "latency_ms": 0.32825,
+          "bytes_up": 7001,
+          "bytes_down": 117,
+          "error_code": "invalid_span_count"
+        },
+        {
+          "name": "put_source:src_long",
+          "method": "PUT",
+          "path": "/v1/sources/src_long",
+          "status": 201,
+          "latency_ms": 164.432041,
+          "bytes_up": 23040114,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_timeline:tl_frames_over",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_frames_over",
+          "status": 413,
+          "latency_ms": 0.403542,
+          "bytes_up": 220,
+          "bytes_down": 118,
+          "error_code": "timeline_too_long"
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 10.265625,
+        "peak_rss_mb_polled": 276.65625,
+        "vmhwm_mb": 276.265625
+      },
+      "wall_ms": 1748.807917,
+      "findings": [
+        "source at exactly 32 MiB accepted (status 201)",
+        "source one frame over 32 MiB rejected: status 413 code source_too_large",
+        "~49.4 MiB request body rejected: status 413 code request_too_large",
+        "65-span timeline rejected: status 422 code invalid_span_count",
+        "timeline one frame over the output cap rejected: status 413 code timeline_too_long"
+      ],
+      "verdict": "commit"
+    },
+    {
+      "id": "baseline-ordinary",
+      "purpose": "Ordinary register/compose/render/read mix with detail-read latency distribution.",
+      "limits_engaged": {
+        "output_frames": 31200,
+        "source_bytes_each": 1048576,
+        "sources": 3,
+        "spans": 2
+      },
+      "expectation": "commit",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_base_a",
+          "method": "PUT",
+          "path": "/v1/sources/src_base_a",
+          "status": 201,
+          "latency_ms": 17.176291,
+          "bytes_up": 1398156,
+          "bytes_down": 355
+        },
+        {
+          "name": "get_source:src_base_a",
+          "method": "GET",
+          "path": "/v1/sources/src_base_a",
+          "status": 200,
+          "latency_ms": 0.181042,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_base_b",
+          "method": "PUT",
+          "path": "/v1/sources/src_base_b",
+          "status": 201,
+          "latency_ms": 14.612333,
+          "bytes_up": 1398156,
+          "bytes_down": 355
+        },
+        {
+          "name": "get_source:src_base_b",
+          "method": "GET",
+          "path": "/v1/sources/src_base_b",
+          "status": 200,
+          "latency_ms": 0.18975,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_base_c",
+          "method": "PUT",
+          "path": "/v1/sources/src_base_c",
+          "status": 201,
+          "latency_ms": 14.12175,
+          "bytes_up": 1398156,
+          "bytes_down": 355
+        },
+        {
+          "name": "get_source:src_base_c",
+          "method": "GET",
+          "path": "/v1/sources/src_base_c",
+          "status": 200,
+          "latency_ms": 0.173958,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_timeline:tl_base",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_base",
+          "status": 201,
+          "latency_ms": 1.366583,
+          "bytes_up": 325,
+          "bytes_down": 425
+        },
+        {
+          "name": "put_render:rnd_base",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_base",
+          "status": 201,
+          "latency_ms": 11.506792,
+          "bytes_up": 25,
+          "bytes_down": 499
+        },
+        {
+          "name": "get_render:rnd_base",
+          "method": "GET",
+          "path": "/v1/renders/rnd_base",
+          "status": 200,
+          "latency_ms": 0.152875,
+          "bytes_down": 499
+        },
+        {
+          "name": "get_receipt:rnd_base",
+          "method": "GET",
+          "path": "/v1/renders/rnd_base/receipt",
+          "status": 200,
+          "latency_ms": 0.207875,
+          "bytes_down": 1236
+        },
+        {
+          "name": "get_output:rnd_base",
+          "method": "GET",
+          "path": "/v1/renders/rnd_base/output",
+          "status": 200,
+          "latency_ms": 0.313291,
+          "bytes_down": 124844
+        }
+      ],
+      "latency_stats": {
+        "get_receipt": {
+          "n": 20,
+          "min_ms": 0.144666,
+          "p50_ms": 0.159,
+          "p95_ms": 0.232,
+          "max_ms": 0.339125,
+          "mean_ms": 0.17175809999999997
+        },
+        "get_render": {
+          "n": 20,
+          "min_ms": 0.086583,
+          "p50_ms": 0.099417,
+          "p95_ms": 0.132834,
+          "max_ms": 0.160042,
+          "mean_ms": 0.10300214999999997
+        },
+        "get_source": {
+          "n": 20,
+          "min_ms": 0.086,
+          "p50_ms": 0.110959,
+          "p95_ms": 0.186708,
+          "max_ms": 0.201792,
+          "mean_ms": 0.12124375000000001
+        },
+        "get_timeline": {
+          "n": 20,
+          "min_ms": 0.088334,
+          "p50_ms": 0.109584,
+          "p95_ms": 0.135458,
+          "max_ms": 0.140708,
+          "mean_ms": 0.11147080000000001
+        }
+      },
+      "render": {
+        "job_id": "rnd_base",
+        "put_status": 201,
+        "put_latency_ms": 11.506792,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "109d70a56b8956bf81c8c9fd1f3dc24bbf1e98244038cb4adc04c1a8daaf7736",
+        "job_receipt_digest": "109d70a56b8956bf81c8c9fd1f3dc24bbf1e98244038cb4adc04c1a8daaf7736",
+        "output_status": 200,
+        "output_bytes": 124844,
+        "output_sha256": "109d70a56b8956bf81c8c9fd1f3dc24bbf1e98244038cb4adc04c1a8daaf7736",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.26953125,
+        "peak_rss_mb_polled": 19.00390625,
+        "vmhwm_mb": 18.77734375
+      },
+      "wall_ms": 134.164083,
+      "verdict": "commit"
+    },
+    {
+      "id": "ingest-max-source",
+      "purpose": "Register the largest legal source (32 MiB) and read it back.",
+      "limits_engaged": {
+        "request_bytes": "~44.7 MiB",
+        "source_bytes": 33554432
+      },
+      "expectation": "commit",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_max_ingest",
+          "method": "PUT",
+          "path": "/v1/sources/src_max_ingest",
+          "status": 201,
+          "latency_ms": 320.279375,
+          "bytes_up": 44739300,
+          "bytes_down": 364
+        },
+        {
+          "name": "get_source:src_max_ingest",
+          "method": "GET",
+          "path": "/v1/sources/src_max_ingest",
+          "status": 200,
+          "latency_ms": 0.259583,
+          "bytes_down": 364
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 10.25390625,
+        "peak_rss_mb_polled": 225.14453125,
+        "vmhwm_mb": 225.23828125
+      },
+      "wall_ms": 537.328959,
+      "verdict": "commit"
+    },
+    {
+      "id": "render-max-output-single-source",
+      "purpose": "One 32 MiB stereo source rendered to a near-cap single-span output (legal near-limit production path).",
+      "limits_engaged": {
+        "output_frames": 8388597,
+        "source_bytes": 33554432,
+        "spans": 1
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_max_out",
+          "method": "PUT",
+          "path": "/v1/sources/src_max_out",
+          "status": 201,
+          "latency_ms": 323.158667,
+          "bytes_up": 44739297,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_timeline:tl_max_out",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_max_out",
+          "status": 201,
+          "latency_ms": 1.757375,
+          "bytes_up": 219,
+          "bytes_down": 324
+        },
+        {
+          "name": "put_render:rnd_max_out",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_max_out",
+          "status": 201,
+          "latency_ms": 318.843166,
+          "bytes_up": 28,
+          "bytes_down": 512
+        },
+        {
+          "name": "get_render:rnd_max_out",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_out",
+          "status": 200,
+          "latency_ms": 0.210375,
+          "bytes_down": 512
+        },
+        {
+          "name": "get_receipt:rnd_max_out",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_out/receipt",
+          "status": 200,
+          "latency_ms": 7.571209,
+          "bytes_down": 875
+        },
+        {
+          "name": "get_output:rnd_max_out",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_out/output",
+          "status": 200,
+          "latency_ms": 39.036,
+          "bytes_down": 33554432
+        }
+      ],
+      "render": {
+        "job_id": "rnd_max_out",
+        "put_status": 201,
+        "put_latency_ms": 318.843166,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "job_receipt_digest": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "output_status": 200,
+        "output_bytes": 33554432,
+        "output_sha256": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 8.26953125,
+        "peak_rss_mb_polled": 459.66796875,
+        "vmhwm_mb": 459.66796875
+      },
+      "wall_ms": 915.602125,
+      "findings": [
+        "single-source near-cap output: 8388597 frames, 33554432 output bytes"
+      ],
+      "verdict": "boundary",
+      "verdict_reasons": [
+        "peak RSS 459.7 MiB is above the 384 MiB commit ceiling"
+      ]
+    },
+    {
+      "id": "render-max-frames-small-sources",
+      "purpose": "Sixteen 1 MiB sources composed to a near-cap output frame count (legal near-limit production path).",
+      "limits_engaged": {
+        "output_frames": 8316256,
+        "source_bytes_each": 1048576,
+        "sources": 16,
+        "spans": 16
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_small_00",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_00",
+          "status": 201,
+          "latency_ms": 21.611958,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_01",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_01",
+          "status": 201,
+          "latency_ms": 16.250041,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_02",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_02",
+          "status": 201,
+          "latency_ms": 17.091417,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_03",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_03",
+          "status": 201,
+          "latency_ms": 16.050875,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_04",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_04",
+          "status": 201,
+          "latency_ms": 17.47125,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_05",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_05",
+          "status": 201,
+          "latency_ms": 16.320625,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_06",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_06",
+          "status": 201,
+          "latency_ms": 17.236666,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_07",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_07",
+          "status": 201,
+          "latency_ms": 17.231334,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_08",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_08",
+          "status": 201,
+          "latency_ms": 17.383833,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_09",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_09",
+          "status": 201,
+          "latency_ms": 15.941458,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_10",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_10",
+          "status": 201,
+          "latency_ms": 16.285042,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_11",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_11",
+          "status": 201,
+          "latency_ms": 37.682,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_12",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_12",
+          "status": 201,
+          "latency_ms": 12.830292,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_13",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_13",
+          "status": 201,
+          "latency_ms": 13.412584,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_14",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_14",
+          "status": 201,
+          "latency_ms": 13.464166,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_small_15",
+          "method": "PUT",
+          "path": "/v1/sources/src_small_15",
+          "status": 201,
+          "latency_ms": 14.20275,
+          "bytes_up": 1398158,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_timeline:tl_max_frames",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_max_frames",
+          "status": 201,
+          "latency_ms": 1.727417,
+          "bytes_up": 1932,
+          "bytes_down": 2040
+        },
+        {
+          "name": "put_render:rnd_max_frames",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_max_frames",
+          "status": 201,
+          "latency_ms": 297.568125,
+          "bytes_up": 31,
+          "bytes_down": 519
+        },
+        {
+          "name": "get_render:rnd_max_frames",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_frames",
+          "status": 200,
+          "latency_ms": 0.19375,
+          "bytes_down": 519
+        },
+        {
+          "name": "get_receipt:rnd_max_frames",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_frames/receipt",
+          "status": 200,
+          "latency_ms": 5.285292,
+          "bytes_down": 6209
+        },
+        {
+          "name": "get_output:rnd_max_frames",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_frames/output",
+          "status": 200,
+          "latency_ms": 53.389,
+          "bytes_down": 33265068
+        }
+      ],
+      "render": {
+        "job_id": "rnd_max_frames",
+        "put_status": 201,
+        "put_latency_ms": 297.568125,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "d29709c2e4a1cd7050f0d23acec3e9cf2e2353963e420773cf790a49f8025c99",
+        "job_receipt_digest": "d29709c2e4a1cd7050f0d23acec3e9cf2e2353963e420773cf790a49f8025c99",
+        "output_status": 200,
+        "output_bytes": 33265068,
+        "output_sha256": "d29709c2e4a1cd7050f0d23acec3e9cf2e2353963e420773cf790a49f8025c99",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 8.2578125,
+        "peak_rss_mb_polled": 308.64453125,
+        "vmhwm_mb": 312.296875
+      },
+      "wall_ms": 764.329667,
+      "findings": [
+        "16-source near-cap output: 8316256 frames"
+      ],
+      "verdict": "commit"
+    },
+    {
+      "id": "render-max-spans",
+      "purpose": "Timeline at the 64-span cap with 64 small distinct sources.",
+      "limits_engaged": {
+        "output_frames": 4305600,
+        "source_bytes_each": 1048576,
+        "sources": 64,
+        "spans": 64
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_span_00",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_00",
+          "status": 201,
+          "latency_ms": 16.283667,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_01",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_01",
+          "status": 201,
+          "latency_ms": 17.833125,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_02",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_02",
+          "status": 201,
+          "latency_ms": 13.378791,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_03",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_03",
+          "status": 201,
+          "latency_ms": 13.307209,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_04",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_04",
+          "status": 201,
+          "latency_ms": 14.718708,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_05",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_05",
+          "status": 201,
+          "latency_ms": 14.083834,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_06",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_06",
+          "status": 201,
+          "latency_ms": 13.839958,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_07",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_07",
+          "status": 201,
+          "latency_ms": 13.824833,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_08",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_08",
+          "status": 201,
+          "latency_ms": 13.431083,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_09",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_09",
+          "status": 201,
+          "latency_ms": 14.16175,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_10",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_10",
+          "status": 201,
+          "latency_ms": 13.54025,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_11",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_11",
+          "status": 201,
+          "latency_ms": 13.791,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_12",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_12",
+          "status": 201,
+          "latency_ms": 13.1265,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_13",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_13",
+          "status": 201,
+          "latency_ms": 13.298458,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_14",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_14",
+          "status": 201,
+          "latency_ms": 13.29025,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_15",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_15",
+          "status": 201,
+          "latency_ms": 13.7145,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_16",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_16",
+          "status": 201,
+          "latency_ms": 13.842667,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_17",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_17",
+          "status": 201,
+          "latency_ms": 13.090917,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_18",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_18",
+          "status": 201,
+          "latency_ms": 13.632459,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_19",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_19",
+          "status": 201,
+          "latency_ms": 13.301333,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_20",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_20",
+          "status": 201,
+          "latency_ms": 13.6395,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_21",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_21",
+          "status": 201,
+          "latency_ms": 13.903,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_22",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_22",
+          "status": 201,
+          "latency_ms": 13.246625,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_23",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_23",
+          "status": 201,
+          "latency_ms": 13.999875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_24",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_24",
+          "status": 201,
+          "latency_ms": 13.293625,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_25",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_25",
+          "status": 201,
+          "latency_ms": 14.384958,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_26",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_26",
+          "status": 201,
+          "latency_ms": 13.641417,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_27",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_27",
+          "status": 201,
+          "latency_ms": 14.556416,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_28",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_28",
+          "status": 201,
+          "latency_ms": 13.769875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_29",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_29",
+          "status": 201,
+          "latency_ms": 14.048125,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_30",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_30",
+          "status": 201,
+          "latency_ms": 12.636583,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_31",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_31",
+          "status": 201,
+          "latency_ms": 14.537667,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_32",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_32",
+          "status": 201,
+          "latency_ms": 14.064209,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_33",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_33",
+          "status": 201,
+          "latency_ms": 13.320541,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_34",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_34",
+          "status": 201,
+          "latency_ms": 14.05925,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_35",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_35",
+          "status": 201,
+          "latency_ms": 13.811875,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_36",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_36",
+          "status": 201,
+          "latency_ms": 14.2015,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_37",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_37",
+          "status": 201,
+          "latency_ms": 13.714792,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_38",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_38",
+          "status": 201,
+          "latency_ms": 14.222916,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_39",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_39",
+          "status": 201,
+          "latency_ms": 14.451875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_40",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_40",
+          "status": 201,
+          "latency_ms": 13.932709,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_41",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_41",
+          "status": 201,
+          "latency_ms": 12.995959,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_42",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_42",
+          "status": 201,
+          "latency_ms": 13.350791,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_43",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_43",
+          "status": 201,
+          "latency_ms": 14.888792,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_44",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_44",
+          "status": 201,
+          "latency_ms": 14.104125,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_45",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_45",
+          "status": 201,
+          "latency_ms": 13.772958,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_46",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_46",
+          "status": 201,
+          "latency_ms": 14.43075,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_47",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_47",
+          "status": 201,
+          "latency_ms": 13.649083,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_48",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_48",
+          "status": 201,
+          "latency_ms": 14.215125,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_49",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_49",
+          "status": 201,
+          "latency_ms": 14.435166,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_50",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_50",
+          "status": 201,
+          "latency_ms": 13.230208,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_51",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_51",
+          "status": 201,
+          "latency_ms": 13.643875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_52",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_52",
+          "status": 201,
+          "latency_ms": 13.26875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_53",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_53",
+          "status": 201,
+          "latency_ms": 13.461334,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_54",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_54",
+          "status": 201,
+          "latency_ms": 13.837291,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_55",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_55",
+          "status": 201,
+          "latency_ms": 13.39025,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_56",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_56",
+          "status": 201,
+          "latency_ms": 14.343208,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_57",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_57",
+          "status": 201,
+          "latency_ms": 13.960042,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_58",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_58",
+          "status": 201,
+          "latency_ms": 13.540208,
+          "bytes_up": 1398157,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_span_59",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_59",
+          "status": 201,
+          "latency_ms": 13.7695,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_60",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_60",
+          "status": 201,
+          "latency_ms": 12.911875,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_61",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_61",
+          "status": 201,
+          "latency_ms": 14.631125,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_62",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_62",
+          "status": 201,
+          "latency_ms": 13.209459,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_span_63",
+          "method": "PUT",
+          "path": "/v1/sources/src_span_63",
+          "status": 201,
+          "latency_ms": 13.355417,
+          "bytes_up": 1398157,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_timeline:tl_max_spans",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_max_spans",
+          "status": 201,
+          "latency_ms": 2.326708,
+          "bytes_up": 7275,
+          "bytes_down": 7381
+        },
+        {
+          "name": "put_render:rnd_max_spans",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_max_spans",
+          "status": 201,
+          "latency_ms": 246.746375,
+          "bytes_up": 30,
+          "bytes_down": 514
+        },
+        {
+          "name": "get_render:rnd_max_spans",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_spans",
+          "status": 200,
+          "latency_ms": 0.228291,
+          "bytes_down": 514
+        },
+        {
+          "name": "get_receipt:rnd_max_spans",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_spans/receipt",
+          "status": 200,
+          "latency_ms": 3.224875,
+          "bytes_down": 22977
+        },
+        {
+          "name": "get_output:rnd_max_spans",
+          "method": "GET",
+          "path": "/v1/renders/rnd_max_spans/output",
+          "status": 200,
+          "latency_ms": 27.299917,
+          "bytes_down": 17222444
+        }
+      ],
+      "render": {
+        "job_id": "rnd_max_spans",
+        "put_status": 201,
+        "put_latency_ms": 246.746375,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "7da64d923e57f70d83384f8eb99910ef3ff746486ecbf4da93938114d8a54ef8",
+        "job_receipt_digest": "7da64d923e57f70d83384f8eb99910ef3ff746486ecbf4da93938114d8a54ef8",
+        "output_status": 200,
+        "output_bytes": 17222444,
+        "output_sha256": "7da64d923e57f70d83384f8eb99910ef3ff746486ecbf4da93938114d8a54ef8",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.27734375,
+        "peak_rss_mb_polled": 367.65625,
+        "vmhwm_mb": 367.65625
+      },
+      "wall_ms": 1458.407959,
+      "verdict": "commit"
+    },
+    {
+      "id": "render-two-max-sources",
+      "purpose": "Two 32 MiB sources rendered to a near-cap output; probes the combined source+output envelope.",
+      "limits_engaged": {
+        "output_frames": 8595200,
+        "source_bytes_each": 33554432,
+        "sources": 2,
+        "spans": 2
+      },
+      "expectation": "boundary or gap",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_dual_a",
+          "method": "PUT",
+          "path": "/v1/sources/src_dual_a",
+          "status": 201,
+          "latency_ms": 326.321709,
+          "bytes_up": 44739296,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_source:src_dual_b",
+          "method": "PUT",
+          "path": "/v1/sources/src_dual_b",
+          "status": 201,
+          "latency_ms": 316.307667,
+          "bytes_up": 44739296,
+          "bytes_down": 357
+        },
+        {
+          "name": "put_timeline:tl_dual_max",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_dual_max",
+          "status": 201,
+          "latency_ms": 1.620958,
+          "bytes_up": 332,
+          "bytes_down": 438
+        },
+        {
+          "name": "put_render:rnd_dual_max",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_dual_max",
+          "status": 201,
+          "latency_ms": 369.634,
+          "bytes_up": 29,
+          "bytes_down": 514
+        },
+        {
+          "name": "get_render:rnd_dual_max",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dual_max",
+          "status": 200,
+          "latency_ms": 0.216083,
+          "bytes_down": 514
+        },
+        {
+          "name": "get_receipt:rnd_dual_max",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dual_max/receipt",
+          "status": 200,
+          "latency_ms": 7.689,
+          "bytes_down": 1191
+        },
+        {
+          "name": "get_output:rnd_dual_max",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dual_max/output",
+          "status": 200,
+          "latency_ms": 29.784125,
+          "bytes_down": 34380844
+        }
+      ],
+      "render": {
+        "job_id": "rnd_dual_max",
+        "put_status": 201,
+        "put_latency_ms": 369.634,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "job_receipt_digest": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "output_status": 200,
+        "output_bytes": 34380844,
+        "output_sha256": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.28125,
+        "peak_rss_mb_polled": 497.26171875,
+        "vmhwm_mb": 497.26171875
+      },
+      "wall_ms": 1346.678751,
+      "findings": [
+        "two-source near-cap output: 8595200 frames"
+      ],
+      "verdict": "boundary",
+      "verdict_reasons": [
+        "peak RSS 497.3 MiB is above the 384 MiB commit ceiling"
+      ]
+    },
+    {
+      "id": "render-many-mid-sources-overbudget",
+      "purpose": "64 spans over 64 distinct 4 MiB sources (256 MiB of registered media); predicted to exceed the 512 MiB budget.",
+      "limits_engaged": {
+        "output_frames": 2304000,
+        "source_bytes_each": 4194304,
+        "sources": 64,
+        "spans": 64
+      },
+      "expectation": "gap (peak RSS over budget)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_mid_00",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_00",
+          "status": 201,
+          "latency_ms": 48.315208,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_01",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_01",
+          "status": 201,
+          "latency_ms": 44.88425,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_02",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_02",
+          "status": 201,
+          "latency_ms": 42.892,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_03",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_03",
+          "status": 201,
+          "latency_ms": 42.521583,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_04",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_04",
+          "status": 201,
+          "latency_ms": 41.518541,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_05",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_05",
+          "status": 201,
+          "latency_ms": 43.600792,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_06",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_06",
+          "status": 201,
+          "latency_ms": 41.605125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_07",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_07",
+          "status": 201,
+          "latency_ms": 43.698667,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_08",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_08",
+          "status": 201,
+          "latency_ms": 59.179041,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_09",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_09",
+          "status": 201,
+          "latency_ms": 42.863,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_10",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_10",
+          "status": 201,
+          "latency_ms": 41.848875,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_11",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_11",
+          "status": 201,
+          "latency_ms": 43.225416,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_12",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_12",
+          "status": 201,
+          "latency_ms": 42.479708,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_13",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_13",
+          "status": 201,
+          "latency_ms": 41.60175,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_14",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_14",
+          "status": 201,
+          "latency_ms": 41.024625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_15",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_15",
+          "status": 201,
+          "latency_ms": 42.618625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_16",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_16",
+          "status": 201,
+          "latency_ms": 42.40775,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_17",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_17",
+          "status": 201,
+          "latency_ms": 41.64,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_18",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_18",
+          "status": 201,
+          "latency_ms": 41.058583,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_19",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_19",
+          "status": 201,
+          "latency_ms": 42.632292,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_20",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_20",
+          "status": 201,
+          "latency_ms": 41.192167,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_21",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_21",
+          "status": 201,
+          "latency_ms": 41.845041,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_22",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_22",
+          "status": 201,
+          "latency_ms": 41.643667,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_23",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_23",
+          "status": 201,
+          "latency_ms": 40.802667,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_24",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_24",
+          "status": 201,
+          "latency_ms": 41.888333,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_25",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_25",
+          "status": 201,
+          "latency_ms": 41.385417,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_26",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_26",
+          "status": 201,
+          "latency_ms": 41.294834,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_27",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_27",
+          "status": 201,
+          "latency_ms": 41.161042,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_28",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_28",
+          "status": 201,
+          "latency_ms": 43.710125,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_29",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_29",
+          "status": 201,
+          "latency_ms": 43.0315,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_30",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_30",
+          "status": 201,
+          "latency_ms": 41.909791,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_31",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_31",
+          "status": 201,
+          "latency_ms": 43.419208,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_32",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_32",
+          "status": 201,
+          "latency_ms": 43.200667,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_33",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_33",
+          "status": 201,
+          "latency_ms": 41.25775,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_34",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_34",
+          "status": 201,
+          "latency_ms": 40.662,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_35",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_35",
+          "status": 201,
+          "latency_ms": 41.996125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_36",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_36",
+          "status": 201,
+          "latency_ms": 41.951541,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_37",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_37",
+          "status": 201,
+          "latency_ms": 41.673875,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_38",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_38",
+          "status": 201,
+          "latency_ms": 40.922833,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_39",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_39",
+          "status": 201,
+          "latency_ms": 42.355417,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_40",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_40",
+          "status": 201,
+          "latency_ms": 42.131292,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_41",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_41",
+          "status": 201,
+          "latency_ms": 41.7955,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_42",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_42",
+          "status": 201,
+          "latency_ms": 42.226583,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_43",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_43",
+          "status": 201,
+          "latency_ms": 42.367375,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_44",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_44",
+          "status": 201,
+          "latency_ms": 40.892958,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_45",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_45",
+          "status": 201,
+          "latency_ms": 42.401333,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_46",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_46",
+          "status": 201,
+          "latency_ms": 41.223125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_47",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_47",
+          "status": 201,
+          "latency_ms": 41.464042,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_48",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_48",
+          "status": 201,
+          "latency_ms": 41.138417,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_49",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_49",
+          "status": 201,
+          "latency_ms": 41.626,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_50",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_50",
+          "status": 201,
+          "latency_ms": 41.453167,
+          "bytes_up": 5592460,
+          "bytes_down": 354
+        },
+        {
+          "name": "put_source:src_mid_51",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_51",
+          "status": 201,
+          "latency_ms": 41.824,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_52",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_52",
+          "status": 201,
+          "latency_ms": 40.883791,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_53",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_53",
+          "status": 201,
+          "latency_ms": 42.731834,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_54",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_54",
+          "status": 201,
+          "latency_ms": 43.14125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_55",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_55",
+          "status": 201,
+          "latency_ms": 42.474625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_56",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_56",
+          "status": 201,
+          "latency_ms": 41.536875,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_57",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_57",
+          "status": 201,
+          "latency_ms": 42.870583,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_58",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_58",
+          "status": 201,
+          "latency_ms": 42.336292,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_59",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_59",
+          "status": 201,
+          "latency_ms": 41.760958,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_60",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_60",
+          "status": 201,
+          "latency_ms": 41.753833,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_61",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_61",
+          "status": 201,
+          "latency_ms": 41.244792,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_62",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_62",
+          "status": 201,
+          "latency_ms": 46.737625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_63",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_63",
+          "status": 201,
+          "latency_ms": 42.531333,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_timeline:tl_mid_over",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_mid_over",
+          "status": 201,
+          "latency_ms": 2.333208,
+          "bytes_up": 7021,
+          "bytes_down": 7127
+        },
+        {
+          "name": "put_render:rnd_mid_over",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_mid_over",
+          "status": 201,
+          "latency_ms": 442.944042,
+          "bytes_up": 29,
+          "bytes_down": 513
+        },
+        {
+          "name": "get_render:rnd_mid_over",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_over",
+          "status": 200,
+          "latency_ms": 0.195417,
+          "bytes_down": 513
+        },
+        {
+          "name": "get_receipt:rnd_mid_over",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_over/receipt",
+          "status": 200,
+          "latency_ms": 2.235916,
+          "bytes_down": 22692
+        },
+        {
+          "name": "get_output:rnd_mid_over",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_over/output",
+          "status": 200,
+          "latency_ms": 14.252084,
+          "bytes_down": 9216044
+        }
+      ],
+      "render": {
+        "job_id": "rnd_mid_over",
+        "put_status": 201,
+        "put_latency_ms": 442.944042,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "job_receipt_digest": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "output_status": 200,
+        "output_bytes": 9216044,
+        "output_sha256": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.2734375,
+        "peak_rss_mb_polled": 870.3671875,
+        "vmhwm_mb": 870.3671875,
+        "phase_hwm_mb": {
+          "after_uploads": 46.53125
+        }
+      },
+      "wall_ms": 3849.059627,
+      "findings": [
+        "render completed unconstrained; peak RSS is the over-budget evidence"
+      ],
+      "verdict": "gap",
+      "verdict_reasons": [
+        "peak RSS 870.4 MiB exceeds the 512 MiB budget"
+      ]
+    },
+    {
+      "id": "render-many-mid-sources-capped",
+      "purpose": "Same combination under GOMEMLIMIT=460MiB to capture the enforced-budget failure signature.",
+      "limits_engaged": {
+        "output_frames": 2304000,
+        "source_bytes_each": 4194304,
+        "sources": 64,
+        "spans": 64
+      },
+      "gomemlimit": "460MiB",
+      "expectation": "gap (job fails or client times out; output stays unavailable)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_mid_00",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_00",
+          "status": 201,
+          "latency_ms": 49.305083,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_01",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_01",
+          "status": 201,
+          "latency_ms": 42.8255,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_02",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_02",
+          "status": 201,
+          "latency_ms": 44.519708,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_03",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_03",
+          "status": 201,
+          "latency_ms": 43.079125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_04",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_04",
+          "status": 201,
+          "latency_ms": 40.174542,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_05",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_05",
+          "status": 201,
+          "latency_ms": 48.28375,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_06",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_06",
+          "status": 201,
+          "latency_ms": 42.121125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_07",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_07",
+          "status": 201,
+          "latency_ms": 40.79,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_08",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_08",
+          "status": 201,
+          "latency_ms": 41.281667,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_09",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_09",
+          "status": 201,
+          "latency_ms": 41.627417,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_10",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_10",
+          "status": 201,
+          "latency_ms": 41.231167,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_11",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_11",
+          "status": 201,
+          "latency_ms": 41.784334,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_12",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_12",
+          "status": 201,
+          "latency_ms": 40.951041,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_13",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_13",
+          "status": 201,
+          "latency_ms": 41.230917,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_14",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_14",
+          "status": 201,
+          "latency_ms": 40.502,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_15",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_15",
+          "status": 201,
+          "latency_ms": 41.384208,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_16",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_16",
+          "status": 201,
+          "latency_ms": 41.789458,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_17",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_17",
+          "status": 201,
+          "latency_ms": 42.289916,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_18",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_18",
+          "status": 201,
+          "latency_ms": 42.268084,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_19",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_19",
+          "status": 201,
+          "latency_ms": 42.048333,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_20",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_20",
+          "status": 201,
+          "latency_ms": 42.466708,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_21",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_21",
+          "status": 201,
+          "latency_ms": 42.987667,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_22",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_22",
+          "status": 201,
+          "latency_ms": 41.437334,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_23",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_23",
+          "status": 201,
+          "latency_ms": 41.417459,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_24",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_24",
+          "status": 201,
+          "latency_ms": 42.446208,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_25",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_25",
+          "status": 201,
+          "latency_ms": 41.741125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_26",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_26",
+          "status": 201,
+          "latency_ms": 40.945042,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_27",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_27",
+          "status": 201,
+          "latency_ms": 41.299125,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_28",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_28",
+          "status": 201,
+          "latency_ms": 40.465834,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_29",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_29",
+          "status": 201,
+          "latency_ms": 46.953167,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_30",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_30",
+          "status": 201,
+          "latency_ms": 41.368,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_31",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_31",
+          "status": 201,
+          "latency_ms": 41.3325,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_32",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_32",
+          "status": 201,
+          "latency_ms": 41.691375,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_33",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_33",
+          "status": 201,
+          "latency_ms": 41.725,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_34",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_34",
+          "status": 201,
+          "latency_ms": 44.531834,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_35",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_35",
+          "status": 201,
+          "latency_ms": 41.269292,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_36",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_36",
+          "status": 201,
+          "latency_ms": 40.192583,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_37",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_37",
+          "status": 201,
+          "latency_ms": 46.265,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_38",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_38",
+          "status": 201,
+          "latency_ms": 43.341083,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_39",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_39",
+          "status": 201,
+          "latency_ms": 50.357875,
+          "bytes_up": 5592460,
+          "bytes_down": 355
+        },
+        {
+          "name": "put_source:src_mid_40",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_40",
+          "status": 201,
+          "latency_ms": 42.4445,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_41",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_41",
+          "status": 201,
+          "latency_ms": 41.561375,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_42",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_42",
+          "status": 201,
+          "latency_ms": 40.295125,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_43",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_43",
+          "status": 201,
+          "latency_ms": 40.972459,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_44",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_44",
+          "status": 201,
+          "latency_ms": 43.252459,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_45",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_45",
+          "status": 201,
+          "latency_ms": 42.571417,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_46",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_46",
+          "status": 201,
+          "latency_ms": 42.972751,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_47",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_47",
+          "status": 201,
+          "latency_ms": 44.333875,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_48",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_48",
+          "status": 201,
+          "latency_ms": 46.836333,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_49",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_49",
+          "status": 201,
+          "latency_ms": 47.803833,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_50",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_50",
+          "status": 201,
+          "latency_ms": 47.676167,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_51",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_51",
+          "status": 201,
+          "latency_ms": 45.712042,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_52",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_52",
+          "status": 201,
+          "latency_ms": 61.819958,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_53",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_53",
+          "status": 201,
+          "latency_ms": 42.14425,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_54",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_54",
+          "status": 201,
+          "latency_ms": 42.365416,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_55",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_55",
+          "status": 201,
+          "latency_ms": 44.725541,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_56",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_56",
+          "status": 201,
+          "latency_ms": 41.238,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_57",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_57",
+          "status": 201,
+          "latency_ms": 41.543625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_58",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_58",
+          "status": 201,
+          "latency_ms": 42.3215,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_59",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_59",
+          "status": 201,
+          "latency_ms": 44.777917,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_60",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_60",
+          "status": 201,
+          "latency_ms": 44.300833,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_61",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_61",
+          "status": 201,
+          "latency_ms": 43.272834,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_62",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_62",
+          "status": 201,
+          "latency_ms": 43.555625,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_mid_63",
+          "method": "PUT",
+          "path": "/v1/sources/src_mid_63",
+          "status": 201,
+          "latency_ms": 42.936333,
+          "bytes_up": 5592460,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_timeline:tl_mid_capped",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_mid_capped",
+          "status": 201,
+          "latency_ms": 2.480125,
+          "bytes_up": 7023,
+          "bytes_down": 7131
+        },
+        {
+          "name": "put_render:rnd_mid_capped",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_mid_capped",
+          "status": 201,
+          "latency_ms": 461.738959,
+          "bytes_up": 31,
+          "bytes_down": 517
+        },
+        {
+          "name": "get_render:rnd_mid_capped",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_capped",
+          "status": 200,
+          "latency_ms": 0.288416,
+          "bytes_down": 517
+        },
+        {
+          "name": "get_receipt:rnd_mid_capped",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_capped/receipt",
+          "status": 200,
+          "latency_ms": 1.921291,
+          "bytes_down": 22696
+        },
+        {
+          "name": "get_output:rnd_mid_capped",
+          "method": "GET",
+          "path": "/v1/renders/rnd_mid_capped/output",
+          "status": 200,
+          "latency_ms": 12.964959,
+          "bytes_down": 9216044
+        }
+      ],
+      "render": {
+        "job_id": "rnd_mid_capped",
+        "put_status": 201,
+        "put_latency_ms": 461.738959,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "job_receipt_digest": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "output_status": 200,
+        "output_bytes": 9216044,
+        "output_sha256": "77049ed709a21127ae5e9cd44e88725f7315064be4422e3684c3351e723a4dcc",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.27734375,
+        "peak_rss_mb_polled": 814.1953125,
+        "vmhwm_mb": 814.11328125,
+        "phase_hwm_mb": {
+          "after_uploads": 43.30078125
+        }
+      },
+      "wall_ms": 3924.257836,
+      "findings": [
+        "under GOMEMLIMIT=460MiB the render ended \"completed\" (job error \"\"); output GET status 200; VmHWM still reached the value recorded below"
+      ],
+      "verdict": "gap",
+      "verdict_reasons": [
+        "peak RSS 814.1 MiB exceeds the 512 MiB budget"
+      ]
+    },
+    {
+      "id": "slow-upload-read-timeout",
+      "purpose": "A 40 MiB request body trickled at 0.5 MiB/s must be cut by the server ReadTimeout (60s).",
+      "limits_engaged": {
+        "request_bytes": "~40 MiB",
+        "server_read_timeout_s": 60,
+        "upload_rate": "0.5 MiB/s"
+      },
+      "expectation": "gap (client observes server-side timeout)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source_slow",
+          "method": "PUT",
+          "path": "/v1/sources/src_slow",
+          "status": 422,
+          "latency_ms": 60002.711486,
+          "bytes_up": 41943084,
+          "bytes_down": 94,
+          "error_code": "invalid_json"
+        },
+        {
+          "name": "get_source:src_slow",
+          "method": "GET",
+          "path": "/v1/sources/src_slow",
+          "status": 404,
+          "latency_ms": 0.701166,
+          "bytes_down": 92,
+          "error_code": "source_not_found"
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 10.265625,
+        "peak_rss_mb_polled": 73.25390625,
+        "vmhwm_mb": 73.2578125
+      },
+      "wall_ms": 60266.454569,
+      "findings": [
+        "server stopped reading at 1m0s (ReadTimeout) and answered status 422 code \"invalid_json\"",
+        "rejected upload left no source: GET /v1/sources/src_slow = 404"
+      ],
+      "verdict": "gap",
+      "verdict_reasons": [
+        "a 40 MiB request body at 0.5 MiB/s cannot be delivered within the 60s ReadTimeout"
+      ]
+    },
+    {
+      "id": "concurrent-max-registrations-2",
+      "purpose": "Two concurrent 32 MiB registrations; probes HTTP-layer memory multiplication at low concurrency.",
+      "limits_engaged": {
+        "concurrency": 2,
+        "source_bytes_each": 33554432
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_conc_0",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_0",
+          "status": 201,
+          "latency_ms": 320.443459,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        },
+        {
+          "name": "put_source:src_conc_1",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_1",
+          "status": 201,
+          "latency_ms": 437.209834,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 10.2734375,
+        "peak_rss_mb_polled": 266.875,
+        "vmhwm_mb": 271.453125
+      },
+      "wall_ms": 662.931833,
+      "findings": [
+        "2 concurrent max-size registrations finished in 437ms wall time"
+      ],
+      "verdict": "commit"
+    },
+    {
+      "id": "concurrent-max-registrations-3",
+      "purpose": "Three concurrent 32 MiB registrations; probes the concurrency commit boundary.",
+      "limits_engaged": {
+        "concurrency": 3,
+        "source_bytes_each": 33554432
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_conc_2",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_2",
+          "status": 201,
+          "latency_ms": 324.066458,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        },
+        {
+          "name": "put_source:src_conc_1",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_1",
+          "status": 201,
+          "latency_ms": 435.957125,
+          "bytes_up": 44739287,
+          "bytes_down": 347
+        },
+        {
+          "name": "put_source:src_conc_0",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_0",
+          "status": 201,
+          "latency_ms": 548.177334,
+          "bytes_up": 44739287,
+          "bytes_down": 347
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 8.25,
+        "peak_rss_mb_polled": 491.47265625,
+        "vmhwm_mb": 491.47265625
+      },
+      "wall_ms": 758.134459,
+      "findings": [
+        "3 concurrent max-size registrations finished in 548ms wall time"
+      ],
+      "verdict": "boundary",
+      "verdict_reasons": [
+        "peak RSS 491.5 MiB is above the 384 MiB commit ceiling"
+      ]
+    },
+    {
+      "id": "concurrent-max-registrations-4",
+      "purpose": "Four concurrent 32 MiB registrations; predicted to exceed the 512 MiB budget.",
+      "limits_engaged": {
+        "concurrency": 4,
+        "source_bytes_each": 33554432
+      },
+      "expectation": "gap (peak RSS over budget)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_conc_3",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_3",
+          "status": 201,
+          "latency_ms": 330.332958,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        },
+        {
+          "name": "put_source:src_conc_0",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_0",
+          "status": 201,
+          "latency_ms": 447.065,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        },
+        {
+          "name": "put_source:src_conc_2",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_2",
+          "status": 201,
+          "latency_ms": 559.665375,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        },
+        {
+          "name": "put_source:src_conc_1",
+          "method": "PUT",
+          "path": "/v1/sources/src_conc_1",
+          "status": 201,
+          "latency_ms": 670.847167,
+          "bytes_up": 44739287,
+          "bytes_down": 348
+        }
+      ],
+      "memory": {
+        "idle_rss_mb": 10.2578125,
+        "peak_rss_mb_polled": 580.8984375,
+        "vmhwm_mb": 580.4453125
+      },
+      "wall_ms": 896.110375,
+      "findings": [
+        "4 concurrent max-size registrations finished in 671ms wall time"
+      ],
+      "verdict": "gap",
+      "verdict_reasons": [
+        "peak RSS 580.4 MiB exceeds the 512 MiB budget"
+      ]
+    },
+    {
+      "id": "write-during-render",
+      "purpose": "Detail reads and a competing write probed while a large render holds the service mutex.",
+      "limits_engaged": {
+        "output_frames": 8383786,
+        "source_bytes_each": 16777216,
+        "sources": 2
+      },
+      "expectation": "commit or boundary (reads stay fast, writes queue behind the render)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_busy_a",
+          "method": "PUT",
+          "path": "/v1/sources/src_busy_a",
+          "status": 201,
+          "latency_ms": 170.48825,
+          "bytes_up": 22369676,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_source:src_busy_b",
+          "method": "PUT",
+          "path": "/v1/sources/src_busy_b",
+          "status": 201,
+          "latency_ms": 157.902583,
+          "bytes_up": 22369676,
+          "bytes_down": 356
+        },
+        {
+          "name": "put_timeline:tl_busy",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_busy",
+          "status": 201,
+          "latency_ms": 1.538375,
+          "bytes_up": 328,
+          "bytes_down": 430
+        },
+        {
+          "name": "get_source_during_render",
+          "method": "GET",
+          "path": "/v1/sources/src_busy_a",
+          "status": 200,
+          "latency_ms": 0.507041,
+          "bytes_down": 356
+        },
+        {
+          "name": "get_render_during_render",
+          "method": "GET",
+          "path": "/v1/renders/rnd_busy",
+          "status": 200,
+          "latency_ms": 0.219875,
+          "bytes_down": 154
+        },
+        {
+          "name": "put_source_during_render",
+          "method": "PUT",
+          "path": "/v1/sources/src_busy_new",
+          "status": 201,
+          "latency_ms": 204.085667,
+          "bytes_up": 1398149,
+          "bytes_down": 350
+        },
+        {
+          "name": "put_render:rnd_busy",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_busy",
+          "status": 201,
+          "latency_ms": 327.854042,
+          "bytes_up": 25,
+          "bytes_down": 506
+        },
+        {
+          "name": "get_render:rnd_busy",
+          "method": "GET",
+          "path": "/v1/renders/rnd_busy",
+          "status": 200,
+          "latency_ms": 0.248208,
+          "bytes_down": 506
+        },
+        {
+          "name": "get_receipt:rnd_busy",
+          "method": "GET",
+          "path": "/v1/renders/rnd_busy/receipt",
+          "status": 200,
+          "latency_ms": 5.397209,
+          "bytes_down": 1183
+        },
+        {
+          "name": "get_output:rnd_busy",
+          "method": "GET",
+          "path": "/v1/renders/rnd_busy/output",
+          "status": 200,
+          "latency_ms": 26.763667,
+          "bytes_down": 33535188
+        }
+      ],
+      "render": {
+        "job_id": "rnd_busy",
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "8e3698a34bccfc2dc38910e6c2360dc739ca20b7d2fa01a1178d233a05509a40",
+        "job_receipt_digest": "8e3698a34bccfc2dc38910e6c2360dc739ca20b7d2fa01a1178d233a05509a40",
+        "output_status": 200,
+        "output_bytes": 33535188,
+        "output_sha256": "8e3698a34bccfc2dc38910e6c2360dc739ca20b7d2fa01a1178d233a05509a40",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 10.26953125,
+        "peak_rss_mb_polled": 403.3671875,
+        "vmhwm_mb": 435.0625
+      },
+      "wall_ms": 877.967459,
+      "findings": [
+        "job state observed mid-render: \"rendering\""
+      ],
+      "verdict": "boundary",
+      "verdict_reasons": [
+        "peak RSS 435.1 MiB is above the 384 MiB commit ceiling"
+      ]
+    },
+    {
+      "id": "concurrent-output-downloads",
+      "purpose": "Four concurrent downloads of a 32 MiB render output served by a fresh instance; isolates read-path memory multiplication.",
+      "limits_engaged": {
+        "concurrency": 4,
+        "output_bytes": 33554432
+      },
+      "expectation": "commit or boundary",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_dl",
+          "method": "PUT",
+          "path": "/v1/sources/src_dl",
+          "status": 201,
+          "latency_ms": 315.352208,
+          "bytes_up": 44739292,
+          "bytes_down": 349
+        },
+        {
+          "name": "put_timeline:tl_dl",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_dl",
+          "status": 201,
+          "latency_ms": 1.396125,
+          "bytes_up": 209,
+          "bytes_down": 309
+        },
+        {
+          "name": "put_render:rnd_dl",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_dl",
+          "status": 201,
+          "latency_ms": 315.005209,
+          "bytes_up": 23,
+          "bytes_down": 502
+        },
+        {
+          "name": "get_render:rnd_dl",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl",
+          "status": 200,
+          "latency_ms": 0.192125,
+          "bytes_down": 502
+        },
+        {
+          "name": "get_receipt:rnd_dl",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/receipt",
+          "status": 200,
+          "latency_ms": 7.140917,
+          "bytes_down": 860
+        },
+        {
+          "name": "get_output:rnd_dl",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/output",
+          "status": 200,
+          "latency_ms": 27.485125,
+          "bytes_down": 33554432
+        },
+        {
+          "name": "get_output_concurrent_2",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/output",
+          "status": 200,
+          "latency_ms": 55.913417,
+          "bytes_down": 33554432
+        },
+        {
+          "name": "get_output_concurrent_3",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/output",
+          "status": 200,
+          "latency_ms": 58.009959,
+          "bytes_down": 33554432
+        },
+        {
+          "name": "get_output_concurrent_0",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/output",
+          "status": 200,
+          "latency_ms": 74.003541,
+          "bytes_down": 33554432
+        },
+        {
+          "name": "get_output_concurrent_1",
+          "method": "GET",
+          "path": "/v1/renders/rnd_dl/output",
+          "status": 200,
+          "latency_ms": 81.650708,
+          "bytes_down": 33554432
+        }
+      ],
+      "render": {
+        "job_id": "rnd_dl",
+        "put_status": 201,
+        "put_latency_ms": 315.005209,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "job_receipt_digest": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "output_status": 200,
+        "output_bytes": 33554432,
+        "output_sha256": "78659878285cbe4e9bb6e92d4925134a0e42189f101c423ef38c06ca9cce45a9",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 138.94921875,
+        "peak_rss_mb_polled": 138.94921875,
+        "vmhwm_mb": 459.3671875,
+        "phase_hwm_mb": {
+          "download_server": 138.94921875,
+          "render_server": 459.3671875
+        }
+      },
+      "wall_ms": 1063.490376,
+      "verdict": "boundary",
+      "verdict_reasons": [
+        "peak RSS 459.4 MiB is above the 384 MiB commit ceiling"
+      ]
+    },
+    {
+      "id": "crash-mid-render-stale-job",
+      "purpose": "SIGKILL the server mid-render (hard enforcement proxy), restart on the same data dir, and record the observable wreckage.",
+      "limits_engaged": {
+        "kill": "SIGKILL at +120ms of render",
+        "source_bytes_each": 33554432,
+        "sources": 2
+      },
+      "expectation": "gap (stale non-terminal job; output unavailable; render id wedged)",
+      "expectation_met": true,
+      "steps": [
+        {
+          "name": "put_source:src_crash_a",
+          "method": "PUT",
+          "path": "/v1/sources/src_crash_a",
+          "status": 201,
+          "latency_ms": 321.028542,
+          "bytes_up": 44739297,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_source:src_crash_b",
+          "method": "PUT",
+          "path": "/v1/sources/src_crash_b",
+          "status": 201,
+          "latency_ms": 321.039583,
+          "bytes_up": 44739297,
+          "bytes_down": 359
+        },
+        {
+          "name": "put_timeline:tl_crash",
+          "method": "PUT",
+          "path": "/v1/timelines/tl_crash",
+          "status": 201,
+          "latency_ms": 1.487916,
+          "bytes_up": 331,
+          "bytes_down": 434
+        },
+        {
+          "name": "put_render:rnd_crash",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_crash",
+          "status": 0,
+          "latency_ms": 121.958874,
+          "bytes_up": 26,
+          "note": "client_error: Put \"http://127.0.0.1:33815/v1/renders/rnd_crash\": EOF"
+        },
+        {
+          "name": "get_render:rnd_crash",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash",
+          "status": 200,
+          "latency_ms": 0.317125,
+          "bytes_down": 156
+        },
+        {
+          "name": "get_receipt:rnd_crash",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash/receipt",
+          "status": 409,
+          "latency_ms": 0.156667,
+          "bytes_down": 124,
+          "error_code": "render_not_completed"
+        },
+        {
+          "name": "get_output:rnd_crash",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash/output",
+          "status": 409,
+          "latency_ms": 0.183666,
+          "bytes_down": 123,
+          "error_code": "render_not_completed"
+        },
+        {
+          "name": "put_render_replay:rnd_crash",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_crash",
+          "status": 200,
+          "latency_ms": 0.430333,
+          "bytes_up": 26,
+          "bytes_down": 156
+        },
+        {
+          "name": "put_render:rnd_crash_recovery",
+          "method": "PUT",
+          "path": "/v1/renders/rnd_crash_recovery",
+          "status": 201,
+          "latency_ms": 365.196,
+          "bytes_up": 26,
+          "bytes_down": 517
+        },
+        {
+          "name": "get_render:rnd_crash_recovery",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash_recovery",
+          "status": 200,
+          "latency_ms": 0.185125,
+          "bytes_down": 517
+        },
+        {
+          "name": "get_receipt:rnd_crash_recovery",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash_recovery/receipt",
+          "status": 200,
+          "latency_ms": 7.861,
+          "bytes_down": 1196
+        },
+        {
+          "name": "get_output:rnd_crash_recovery",
+          "method": "GET",
+          "path": "/v1/renders/rnd_crash_recovery/output",
+          "status": 200,
+          "latency_ms": 38.37275,
+          "bytes_down": 34380844
+        }
+      ],
+      "render": {
+        "job_id": "rnd_crash_recovery",
+        "put_status": 201,
+        "put_latency_ms": 365.196,
+        "observed_states": [
+          "completed"
+        ],
+        "terminal_state": "completed",
+        "receipt_status": 200,
+        "receipt_digest": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "job_receipt_digest": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "output_status": 200,
+        "output_bytes": 34380844,
+        "output_sha256": "ba30c2fa745836f4c3699027d50853edbaf4850108f0aaad176823eb277bc5a6",
+        "digest_match": true
+      },
+      "memory": {
+        "idle_rss_mb": 0,
+        "peak_rss_mb_polled": 0,
+        "vmhwm_mb": 497.80859375,
+        "phase_hwm_mb": {
+          "killed_server": 371.04296875,
+          "restarted_server": 497.80859375
+        }
+      },
+      "wall_ms": 1531.143292,
+      "findings": [
+        "render PUT observed the kill as: Put \"http://127.0.0.1:33815/v1/renders/rnd_crash\": EOF",
+        "after SIGKILL + restart the render job reads back as state \"rendering\"",
+        "receipt GET = 409, output GET = 409 code \"render_not_completed\"",
+        "idempotent replay of the wedged render id returned status 200 with state \"rendering\"",
+        "a fresh render id on the same timeline completed and downloaded correctly"
+      ],
+      "verdict": "gap",
+      "verdict_reasons": [
+        "hard kill leaves the render job in non-terminal state \"rendering\" with no automatic recovery",
+        "render id rnd_crash is wedged in state \"rendering\"; idempotent replay cannot re-drive it"
+      ]
+    }
+  ]
+}
